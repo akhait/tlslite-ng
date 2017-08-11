@@ -151,6 +151,9 @@ class TLSRecordLayer(object):
         #Limit the size of outgoing records to following size
         self.recordSize = 16384 # 2**14
 
+        # NewSessionTickets received from server
+        self.tickets = []
+
     @property
     def _client(self):
         """Boolean stating if the endpoint acts as a client"""
@@ -234,12 +237,23 @@ class TLSRecordLayer(object):
         :rtype: iterable
         :returns: A generator; see above for details.
         """
+        if self.version > (3, 3):
+            allowed_types = (ContentType.application_data,
+                             ContentType.handshake)
+            allowed_hs_types = HandshakeType.new_session_ticket
+        else:
+            allowed_types = ContentType.application_data
+            allowed_hs_types = None
         try:
             while len(self._readBuffer)<min and not self.closed:
                 try:
-                    for result in self._getMsg(ContentType.application_data):
+                    for result in self._getMsg(allowed_types,
+                                               allowed_hs_types):
                         if result in (0,1):
                             yield result
+                    if isinstance(result, NewSessionTicket):
+                        self.tickets.append(result)
+                        continue
                     applicationData = result
                     self._readBuffer += applicationData.write()
                 except TLSRemoteAlert as alert:
