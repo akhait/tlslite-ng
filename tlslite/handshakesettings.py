@@ -279,10 +279,13 @@ class HandshakeSettings(object):
         """Check if set protocol version are sane"""
         if other.minVersion > other.maxVersion:
             raise ValueError("Versions set incorrectly")
-        if other.minVersion not in ((3, 0), (3, 1), (3, 2), (3, 3)):
+        if other.minVersion not in ((3, 0), (3, 1), (3, 2), (3, 3), (3, 4)):
             raise ValueError("minVersion set incorrectly")
         if other.maxVersion not in ((3, 0), (3, 1), (3, 2), (3, 3), (3, 4)):
             raise ValueError("maxVersion set incorrectly")
+
+        if other.maxVersion < (3, 4):
+            other.versions = [i for i in other.versions if i < (3, 4)]
 
     @staticmethod
     def _sanityCheckExtensions(other):
